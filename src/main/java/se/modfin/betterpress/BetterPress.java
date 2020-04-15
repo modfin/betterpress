@@ -1,5 +1,6 @@
 package se.modfin.betterpress;
 
+import com.google.common.io.Closeables;
 import com.google.common.jimfs.Configuration;
 import com.google.common.jimfs.Jimfs;
 import com.openhtmltopdf.pdfboxout.PdfRendererBuilder;
@@ -9,6 +10,7 @@ import org.jsoup.Jsoup;
 import org.jsoup.helper.W3CDom;
 import spark.Request;
 import spark.Response;
+import spark.resource.ClassPathResource;
 
 import javax.servlet.MultipartConfigElement;
 import javax.servlet.http.HttpServletResponse;
@@ -22,6 +24,7 @@ import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collection;
+import java.util.Properties;
 import java.util.UUID;
 
 import static spark.Spark.*;
@@ -35,6 +38,19 @@ public class BetterPress {
         before((req, res) -> res.type("application/pdf"));
         post("", BetterPress::generatePDF);
         post("/", BetterPress::generatePDF);
+
+        ClassPathResource resource = new ClassPathResource("app.properties");
+        Properties p = new Properties();
+        InputStream inputStream = null;
+        try {
+            inputStream = resource.getInputStream();
+            p.load(inputStream);
+        } catch (IOException e) {
+            log.error(e.getMessage(), e);
+        } finally {
+            Closeables.closeQuietly(inputStream);
+        }
+        log.info("Running Betterpress " + p.getProperty("version"));
     }
 
     private static HttpServletResponse generatePDF(Request req, Response res) {
