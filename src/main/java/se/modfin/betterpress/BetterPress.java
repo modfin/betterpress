@@ -4,10 +4,10 @@ import com.google.common.io.Closeables;
 import com.google.common.jimfs.Configuration;
 import com.google.common.jimfs.Jimfs;
 import com.openhtmltopdf.pdfboxout.PdfRendererBuilder;
-import org.apache.log4j.LogManager;
-import org.apache.log4j.Logger;
 import org.jsoup.Jsoup;
 import org.jsoup.helper.W3CDom;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import spark.Request;
 import spark.Response;
 import spark.resource.ClassPathResource;
@@ -30,7 +30,7 @@ import java.util.UUID;
 import static spark.Spark.*;
 
 public class BetterPress {
-    private static Logger log = LogManager.getLogger(BetterPress.class.getName());
+    private static Logger log = LoggerFactory.getLogger(BetterPress.class);
 
     public static void main(String[] args) {
         port(8080);
@@ -62,8 +62,9 @@ public class BetterPress {
         try {
             fs = generateInMemoryFileSystemFromParts(fsId, req.raw().getParts());
         } catch (Exception e) {
-            log.error(e);
-            halt(400, "could not generate PDF");
+            final String msg = "could not generate PDF";
+            log.error(msg, e);
+            halt(400, msg);
             return res.raw();
         }
 
@@ -74,8 +75,9 @@ public class BetterPress {
         try {
             indexFileContents = new String(Files.readAllBytes(fs.getPath(indexFilePath)));
         } catch (IOException e) {
-            log.error(e);
-            halt(400, "could not read index file, make sure to send one file called 'index.html'");
+            final String msg = "could not read index file, make sure to send one file called 'index.html'";
+            log.error(msg, e);
+            halt(400, msg);
             return res.raw();
         }
         org.w3c.dom.Document doc = html5ParseDocument(indexFileContents);
@@ -83,8 +85,9 @@ public class BetterPress {
         try {
             url = fs.getPath(indexFilePath).toUri().toURL();
         } catch (MalformedURLException e) {
-            log.error(e);
-            halt(500, "could not generate PDF");
+            final String msg = "could not generate PDF";
+            log.error(msg, e);
+            halt(500, msg);
             return res.raw();
         }
         builder.withW3cDocument(doc, url.toString());
@@ -93,14 +96,15 @@ public class BetterPress {
             builder.toStream(os);
             builder.run();
         } catch (Exception e) {
-            log.error(e);
-            halt(500, "could not generate PDF");
+            final String msg = "could not generate PDF";
+            log.error(msg, e);
+            halt(500, msg);
         } finally {
             try {
                 fs.close();
             } catch (IOException e) {
-                log.error(e);
-                log.fatal("tried to close jimfs, but failed. probably unrecoverable");
+                log.error("tried to close jimfs, but failed. probably unrecoverable", e);
+                System.exit(1);
             }
         }
         return res.raw();
@@ -128,10 +132,10 @@ public class BetterPress {
             try {
                 fs.close();
             } catch (IOException e2) {
-                log.error(e2);
+                log.error("in memory filesystem error", e2);
                 log.error("write was:");
-                log.error(e);
-                log.fatal("tried to close jimfs after write error, but failed. probably unrecoverable");
+                log.error("tried to close jimfs after write error, but failed. probably unrecoverable", e);
+                System.exit(1);
             }
             throw e;
         }

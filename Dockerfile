@@ -1,4 +1,4 @@
-FROM openjdk:8-jdk-alpine3.9 AS builder
+FROM openjdk:17-jdk-alpine3.14 AS builder
 
 COPY . /usr/src/betterpress/
 WORKDIR /usr/src/betterpress/
@@ -6,7 +6,7 @@ RUN apk --no-cache add maven
 
 RUN mvn package
 
-FROM openjdk:8-jre-alpine3.9
+FROM openjdk:11-jre-slim
 WORKDIR /root/
 COPY --from=builder /usr/src/betterpress/target/betterpress.jar .
 
