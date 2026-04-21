@@ -6,7 +6,7 @@ WORKDIR /usr/src/betterpress/
 RUN mvn package
 
 FROM eclipse-temurin:21-alpine
-WORKDIR /root/
+WORKDIR /app
 COPY --from=builder /usr/src/betterpress/target/betterpress.jar .
 
 EXPOSE 8080
